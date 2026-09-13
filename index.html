@@ -175,6 +175,48 @@
 
   .offline{background:var(--warn-soft); color:var(--warn); font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:10px; margin-bottom:16px; display:none;}
 
+  /* month navigator */
+  .monthnav{display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:16px;}
+  .mnav-btn{width:38px; height:38px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--ink); font-size:20px; line-height:1; box-shadow:var(--shadow);}
+  .mnav-btn:disabled{opacity:.35; cursor:default;}
+  .mnav-label{font-family:"Fraunces",serif; font-weight:600; font-size:17px; min-width:190px; text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;}
+  .mnav-tag{font-family:"Public Sans",sans-serif; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); border:1px solid var(--border); border-radius:5px; padding:1px 6px;}
+
+  /* monthly history */
+  .hist-list{display:flex; flex-direction:column; gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:24px;}
+  .hist{display:grid; grid-template-columns:1.4fr 1fr auto auto; gap:12px; align-items:center; padding:12px 14px; background:var(--surface); border:0; text-align:left; width:100%; cursor:pointer;}
+  .hist:hover{background:var(--surface-2);}
+  .hist.active{background:var(--accent-soft);}
+  .hist-m{font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:6px; color:var(--ink);}
+  .hist-now{font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 5px;}
+  .hist-bar{height:7px; border-radius:5px; background:var(--surface-2); border:1px solid var(--border); overflow:hidden;}
+  .hist-bar>span{display:block; height:100%; background:var(--accent);}
+  .hist-v, .hist-s{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:13px; font-weight:600; text-align:right; display:flex; flex-direction:column; line-height:1.15; color:var(--ink);}
+  .hist-v small, .hist-s small{font-family:"Public Sans",sans-serif; font-size:9px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-3);}
+  .hist-s{color:var(--good);}
+  .hist-s.crit{color:var(--crit);}
+  @media(max-width:460px){ .hist{grid-template-columns:1fr auto auto; gap:9px;} .hist-bar{display:none;} }
+
+  /* investments */
+  .invest{padding:16px 18px 18px; margin-bottom:22px;}
+  .invest .ih{display:flex; align-items:baseline; gap:8px; margin-bottom:8px;}
+  .invest .ih h2{font-family:"Fraunces",serif; font-weight:600; font-size:17px; display:flex; align-items:center; gap:7px;}
+  .invest .plan{margin-left:auto; font-size:12px; color:var(--ink-3); font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;}
+  .invest .big{font-family:"Fraunces",serif; font-weight:600; font-size:30px; letter-spacing:-.01em; font-variant-numeric:tabular-nums; color:var(--gold); line-height:1.1;}
+  .invest .big small{font-family:"Public Sans",sans-serif; font-size:13px; font-weight:600; color:var(--ink-3);}
+  .invest .track{margin:11px 0 5px;}
+  .invest .fill{background:var(--gold);}
+  .invest .foot{font-size:12.5px; color:var(--ink-3);}
+  .inv-list{display:flex; flex-direction:column; gap:1px; background:var(--border); border:1px solid var(--border); border-radius:11px; overflow:hidden; margin:12px 0 4px;}
+  .inv-item{display:flex; align-items:center; gap:9px; padding:9px 12px; background:var(--surface); font-size:13px; color:var(--ink-2);}
+  .inv-item .amt{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-weight:600; color:var(--ink);}
+  .inv-item .del{border:0; background:transparent; color:var(--ink-3); font-size:17px; line-height:1; padding:0 5px; border-radius:6px;}
+  .inv-item .del:hover{color:var(--crit); background:var(--crit-soft);}
+  .invest-form{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:12px;}
+  .invest-form .full{grid-column:1 / -1;}
+  .invest-form input, .invest-form select{font-size:14px; padding:10px 11px;}
+  .invest-form .btn{grid-column:1 / -1; background:var(--gold);}
+
   /* toast */
   #toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--bg); font-size:13.5px; font-weight:600; padding:11px 18px; border-radius:100px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:50;}
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
@@ -213,12 +255,18 @@
 
   <div class="conn" id="conn"></div>
 
+  <!-- MONTH NAVIGATOR -->
+  <div class="monthnav" id="monthNav"></div>
+
   <!-- HERO -->
   <div class="card hero" id="hero"></div>
 
   <!-- SUMMARY -->
   <div class="stats" id="stats"></div>
   <div class="card savings" id="savings"></div>
+
+  <!-- INVESTMENTS -->
+  <div class="card invest" id="invest"></div>
 
   <!-- ADD EXPENSE -->
   <div class="card add">
@@ -254,8 +302,12 @@
   <div class="buckets" id="buckets"></div>
 
   <!-- EXPENSES -->
-  <div class="section-h"><h2>Recent expenses</h2><span class="hint" id="expHint"></span></div>
+  <div class="section-h"><h2>Expenses</h2><span class="hint" id="expHint"></span></div>
   <div id="expWrap"></div>
+
+  <!-- MONTHLY HISTORY -->
+  <div class="section-h"><h2>Monthly history</h2><span class="hint">tap a month to view it</span></div>
+  <div id="history"></div>
 
   <!-- SETTINGS -->
   <details class="settings">
@@ -346,10 +398,12 @@ const state = {
   cats:    JSON.parse(JSON.stringify(DEFAULT_CATS)),
   income:  {...DEFAULT_INCOME},
   expenses: [],
+  investments: [],
   view: 'household',
   who: 'both',
   dailyBasis: 'flexible',      // 'all' or 'flexible'
   editingId: null,
+  viewMonth: '',               // which month the dashboard is showing (YYYY-MM)
 };
 let sb = null;  // Supabase client, created after the passcode is entered
 
@@ -375,7 +429,13 @@ function attributed(exp,view){
   if(exp.who==='both') return exp.amount/2;
   return exp.who===view ? exp.amount : 0;
 }
-function thisMonth(){return state.expenses.filter(e=>monthOf(e.date)===monthKey());}
+function curMonth(){return state.viewMonth||monthKey();}
+function isCurrentMonth(){return curMonth()===monthKey();}
+function thisMonth(){return state.expenses.filter(e=>monthOf(e.date)===curMonth());}
+function monthTotalDays(mk){const [y,m]=mk.split('-').map(Number);return new Date(y,m,0).getDate();}
+function monthName(mk){const [y,m]=mk.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});}
+function shiftMonth(mk,delta){let [y,m]=mk.split('-').map(Number);m+=delta;while(m<1){m+=12;y--;}while(m>12){m-=12;y++;}return y+'-'+pad(m);}
+function monthsWithData(){const set=new Set(state.expenses.map(e=>monthOf(e.date)).filter(Boolean));set.add(monthKey());return Array.from(set).sort().reverse();}
 
 function budgetInScope(view,flexOnly){
   return state.cats.reduce((s,c)=> s + ((!flexOnly||bucketOf(c.bucket).flexible)?catBudget(c,view):0), 0);
@@ -389,6 +449,25 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show'
 /* ---------- render: hero ---------- */
 function renderHero(){
   const view=state.view, flexOnly=state.dailyBasis==='flexible';
+  const el=$('#hero');
+
+  // Past/other month → show a recap instead of the live daily figure
+  if(!isCurrentMonth()){
+    const budgetAll=budgetInScope(view,false), spentAll=spentInScope(view,false);
+    const leftAll=budgetAll-spentAll;
+    const cls=leftAll<0?'crit':'';
+    el.className='card hero '+cls;
+    el.innerHTML=`
+      <div class="lbl">${monthName(curMonth())} — recap</div>
+      <div class="big ${cls}">${eur(spentAll)}</div>
+      <span class="chip ${leftAll<0?'crit':'good'}">${leftAll<0?eur(-leftAll)+' over budget':eur(leftAll)+' under budget'}</span>
+      <div class="heroline">
+        <span>Budget <b class="num">${eur(budgetAll)}</b></span>
+        <span>Total spent <b class="num">${eur(spentAll)}</b></span>
+      </div>`;
+    return;
+  }
+
   const {remaining:daysLeft}=daysInfo();
   const budget=budgetInScope(view,flexOnly);
   const spent=spentInScope(view,flexOnly);
@@ -401,7 +480,6 @@ function renderHero(){
   else if(spentToday>daily && daily>0){cls='warn'; chip='<span class="chip warn">Over today’s budget</span>';}
   else {chip='<span class="chip good">On track</span>';}
 
-  const el=$('#hero');
   el.className='card hero '+cls;
   el.innerHTML=`
     <div class="lbl">Safe to spend today</div>
@@ -427,16 +505,19 @@ function renderStats(){
   const budget=budgetInScope(view,false);
   const spent=spentInScope(view,false);
   const left=budget-spent;
-  const {remaining:daysLeft}=daysInfo();
+  const daysTile = isCurrentMonth()
+    ? stat('Days left', daysInfo().remaining)
+    : stat('Days in month', monthTotalDays(curMonth()));
   $('#stats').innerHTML=`
     ${stat('Budget (month)',eur(budget))}
     ${stat('Spent',eur(spent))}
     ${stat('Left in budget',eur(left),left<0?'crit':'')}
-    ${stat('Days left',daysLeft)}`;
+    ${daysTile}`;
   const income=incomeFor(view);
   const saved=income-spent;
+  const savedLabel = isCurrentMonth() ? 'Saved so far this month' : 'Saved in '+monthName(curMonth());
   $('#savings').innerHTML=`
-    <span class="h">💚 Saved so far this month <span style="color:var(--ink-3);font-weight:400;">(income ${eur(income)} − spent)</span></span>
+    <span class="h">💚 ${savedLabel} <span style="color:var(--ink-3);font-weight:400;">(income ${eur(income)} − spent)</span></span>
     <span class="amt ${saved<0?'crit':''}">${eur(saved)}</span>`;
 }
 function stat(k,v,cls){return `<div class="card stat"><div class="k">${k}</div><div class="v ${cls||''}">${v}</div></div>`;}
@@ -544,11 +625,77 @@ function renderBudgetEditor(){
   $('#budgetEdit').innerHTML=html;
 }
 
+/* ---------- render: month navigator ---------- */
+function renderMonthNav(){
+  const cur=curMonth();
+  const atCurrent = cur===monthKey();
+  $('#monthNav').innerHTML=`
+    <button class="mnav-btn" data-month-shift="-1" aria-label="Previous month">‹</button>
+    <div class="mnav-label">${monthName(cur)}${atCurrent?'':' <span class="mnav-tag">past</span>'}</div>
+    <button class="mnav-btn" data-month-shift="1" ${atCurrent?'disabled':''} aria-label="Next month">›</button>`;
+}
+
+/* ---------- render: monthly history ---------- */
+function renderHistory(){
+  const view=state.view;
+  const rows=monthsWithData().map(mk=>{
+    const exps=state.expenses.filter(e=>monthOf(e.date)===mk);
+    const spent=exps.reduce((s,e)=>s+attributed(e,view),0);
+    const saved=incomeFor(view)-spent;
+    return {mk, spent, saved};
+  });
+  const maxSpent=Math.max(1,...rows.map(r=>r.spent));
+  $('#history').innerHTML='<div class="hist-list">'+rows.map(r=>{
+    const active=r.mk===curMonth();
+    const w=Math.round(r.spent/maxSpent*100);
+    return `<button class="hist ${active?'active':''}" data-month-go="${r.mk}">
+      <span class="hist-m">${monthName(r.mk)}${r.mk===monthKey()?' <span class="hist-now">now</span>':''}</span>
+      <span class="hist-bar"><span style="width:${w}%"></span></span>
+      <span class="hist-v">${eur(r.spent)}<small>spent</small></span>
+      <span class="hist-s ${r.saved<0?'crit':''}">${eur(r.saved)}<small>saved</small></span>
+    </button>`;
+  }).join('')+'</div>';
+}
+
+/* ---------- render: investments ---------- */
+function renderInvestments(){
+  const view=state.view;
+  const planned=Math.max(0, incomeFor(view)-budgetInScope(view,false));
+  const contribs=state.investments.filter(c=>monthOf(c.date)===curMonth());
+  const invested=contribs.reduce((s,c)=>s+attributed(c,view),0);
+  const pct=planned>0?Math.min(100,invested/planned*100):(invested>0?100:0);
+  const remaining=Math.max(0,planned-invested);
+  const isCur=isCurrentMonth();
+  const whoLabel={both:'Both',tanguy:'Tanguy',elena:'Elena'};
+  const list = contribs.length ? '<div class="inv-list">'+contribs.slice()
+    .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(c=>{
+      const d=c.date?new Date(c.date+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+      return `<div class="inv-item"><span class="who ${c.who}">${whoLabel[c.who]||c.who}</span><span>${d}</span>${c.note?'<span>· '+escapeHtml(c.note)+'</span>':''}<span class="amt num">${eur2(c.amount)}</span><button class="del" data-inv-del="${c.id}" aria-label="Delete">×</button></div>`;
+    }).join('')+'</div>' : '';
+  $('#invest').innerHTML=`
+    <div class="ih"><h2>📈 Investments</h2><span class="plan">plan ${eur(planned)}/mo</span></div>
+    <div class="big">${eur(invested)} <small>of ${eur(planned)} ${isCur?'planned this month':'planned'}</small></div>
+    <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+    <div class="foot">${remaining>0?eur(remaining)+' left to reach your plan':'🎉 Plan reached for '+monthName(curMonth())}</div>
+    ${list}
+    <form id="investForm" class="invest-form">
+      <input class="full" type="number" id="invAmount" inputmode="decimal" step="0.01" min="0" placeholder="Amount (€)" value="${remaining>0?remaining.toFixed(2):''}">
+      <select id="invWho" aria-label="Who contributed">
+        <option value="both">Both</option>
+        <option value="tanguy">Tanguy</option>
+        <option value="elena">Elena</option>
+      </select>
+      <input type="date" id="invDate" value="${isCur?todayStr():curMonth()+'-15'}" aria-label="Contribution date">
+      <button type="submit" class="btn">Mark contribution made</button>
+    </form>`;
+}
+
 /* ---------- master render ---------- */
 function renderDashboard(){
-  const d=new Date();
-  $('#monthLabel').textContent=d.toLocaleDateString('en-GB',{month:'long',year:'numeric'})+' · Barcelona';
-  renderHero(); renderStats(); renderBuckets(); renderExpenses(); renderRecurring();
+  if(!state.viewMonth) state.viewMonth=monthKey();
+  $('#monthLabel').textContent='Budget · Barcelona';
+  $('#bucketHint').textContent = isCurrentMonth()? 'this month' : monthName(curMonth());
+  renderMonthNav(); renderHero(); renderStats(); renderBuckets(); renderInvestments(); renderExpenses(); renderRecurring(); renderHistory();
 }
 
 /* ---------- data writes (Supabase) ---------- */
@@ -579,6 +726,16 @@ async function setBasis(v){
   state.dailyBasis=v; renderHero();
   if(!sb) return;
   try{ await sb.from('config').upsert({id:'settings', data:{dailyBasis:v}}); }catch(err){}
+}
+async function addContribution(obj){
+  if(!sb){ toast('Not connected'); return; }
+  try{ const {error}=await sb.from('investments').insert({amount:obj.amount, who:obj.who, date:obj.date, note:obj.note||''}); if(error) throw error; toast('Contribution logged'); loadInvestments(); }
+  catch(err){ console.error(err); toast('Could not save — run the investments setup first'); }
+}
+async function deleteContribution(id){
+  if(!sb) return;
+  try{ const {error}=await sb.from('investments').delete().eq('id',id); if(error) throw error; loadInvestments(); }
+  catch(err){ console.error(err); toast('Could not delete'); }
 }
 async function toggleRecurring(catId){
   const c=catOf(catId); if(!c) return;
@@ -620,6 +777,7 @@ function loadForEdit(id){
 
 /* ---------- wiring ---------- */
 function wire(){
+  state.viewMonth=monthKey();
   $('#date').value=todayStr();
   renderCatSelect();
 
@@ -640,6 +798,19 @@ function wire(){
     const ed=ev.target.closest('[data-edit]'); if(ed){ loadForEdit(ed.dataset.edit); }
     const rc=ev.target.closest('[data-recur]'); if(rc){ toggleRecurring(rc.dataset.recur); }
     const xc=ev.target.closest('[data-xcat]'); if(xc){ state.cats=state.cats.filter(c=>c.id!==xc.dataset.xcat); renderBudgetEditor(); }
+    const ms=ev.target.closest('[data-month-shift]'); if(ms){ const nm=shiftMonth(curMonth(), Number(ms.dataset.monthShift)); if(nm<=monthKey()){ state.viewMonth=nm; renderDashboard(); } }
+    const mg=ev.target.closest('[data-month-go]'); if(mg){ state.viewMonth=mg.dataset.monthGo; renderDashboard(); window.scrollTo({top:0,behavior:'smooth'}); }
+    const idl=ev.target.closest('[data-inv-del]'); if(idl){ deleteContribution(idl.dataset.invDel); }
+  });
+
+  // contribution form (delegated — the card re-renders)
+  document.addEventListener('submit',ev=>{
+    if(ev.target && ev.target.id==='investForm'){
+      ev.preventDefault();
+      const amt=parseFloat($('#invAmount').value);
+      if(!(amt>0)){ toast('Enter an amount'); return; }
+      addContribution({amount:amt, who:$('#invWho').value, date:$('#invDate').value||todayStr(), note:''});
+    }
   });
 
   // submit
@@ -682,6 +853,13 @@ async function loadExpenses(){
   state.expenses=(data||[]).map(mapRow);
   renderDashboard();
 }
+async function loadInvestments(){
+  if(!sb) return;
+  const {data,error}=await sb.from('investments').select('*').order('created_at',{ascending:false}).limit(2000);
+  if(error){ console.error('investments load (table may not exist yet)', error); state.investments=[]; }
+  else state.investments=(data||[]).map(c=>({id:c.id, amount:Number(c.amount), who:c.who, date:c.date, note:c.note}));
+  renderInvestments();
+}
 async function loadConfig(){
   if(!sb) return;
   const {data,error}=await sb.from('config').select('*');
@@ -705,8 +883,10 @@ function startApp(){
   wire();
   loadConfig();
   loadExpenses();
+  loadInvestments();
   sb.channel('rt-expenses').on('postgres_changes',{event:'*',schema:'public',table:'expenses'},()=>loadExpenses()).subscribe();
   sb.channel('rt-config').on('postgres_changes',{event:'*',schema:'public',table:'config'},()=>loadConfig()).subscribe();
+  sb.channel('rt-invest').on('postgres_changes',{event:'*',schema:'public',table:'investments'},()=>loadInvestments()).subscribe();
   const conn=$('#conn'); conn.className='conn ok'; conn.textContent='● Live — synced across your devices';
   setTimeout(()=>{ conn.style.display='none'; }, 3200);
 }
