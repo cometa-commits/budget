@@ -1,0 +1,765 @@
+<title>Tanguy & Elena Budget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F1EA; --surface:#FFFFFF; --surface-2:#FBFAF5; --border:#E5E1D6;
+    --ink:#1E2A2B; --ink-2:#586261; --ink-3:#8B938E;
+    --accent:#0E6E5E; --accent-soft:#DCEAE6; --accent-line:#0E6E5E;
+    --good:#1C8C68; --good-soft:#D8ECE2;
+    --warn:#A9791A; --warn-soft:#F3E7CB;
+    --crit:#BC4630; --crit-soft:#F4DDD5;
+    --gold:#A9801F;
+    --shadow:0 1px 2px rgba(30,42,43,.05), 0 10px 26px -14px rgba(30,42,43,.20);
+    --radius:15px;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --bg:#13181A; --surface:#1B2225; --surface-2:#20282B; --border:#2C3539;
+      --ink:#E9ECE6; --ink-2:#A4ADA7; --ink-3:#767E79;
+      --accent:#4EB6A3; --accent-soft:#183530; --accent-line:#4EB6A3;
+      --good:#53C598; --good-soft:#183029;
+      --warn:#DBAE55; --warn-soft:#38311D;
+      --crit:#E08066; --crit-soft:#3A241E;
+      --gold:#D2A648;
+      --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 30px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#13181A; --surface:#1B2225; --surface-2:#20282B; --border:#2C3539;
+    --ink:#E9ECE6; --ink-2:#A4ADA7; --ink-3:#767E79;
+    --accent:#4EB6A3; --accent-soft:#183530; --accent-line:#4EB6A3;
+    --good:#53C598; --good-soft:#183029;
+    --warn:#DBAE55; --warn-soft:#38311D;
+    --crit:#E08066; --crit-soft:#3A241E;
+    --gold:#D2A648;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 30px -16px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Public Sans", system-ui, -apple-system, sans-serif;
+    line-height:1.5; margin:0;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 120px;}
+  @media(min-width:640px){ .wrap{padding:28px 24px 60px;} }
+
+  h1,h2,h3{margin:0; text-wrap:balance;}
+  .mono{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums;}
+  .num{font-variant-numeric:tabular-nums;}
+  button{font-family:inherit; cursor:pointer;}
+  button:focus-visible, select:focus-visible, input:focus-visible{
+    outline:2.5px solid var(--accent); outline-offset:2px;
+  }
+
+  /* header */
+  header{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:18px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{font-size:22px; line-height:1;}
+  .brand h1{font-family:"Fraunces", Georgia, serif; font-weight:600; font-size:22px; letter-spacing:-.01em;}
+  .brand .sub{color:var(--ink-2); font-size:12.5px; letter-spacing:.03em; text-transform:uppercase; margin-top:1px;}
+
+  /* segmented view toggle */
+  .seg{display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius:11px; padding:3px; gap:2px;}
+  .seg button{border:0; background:transparent; color:var(--ink-2); font-weight:600; font-size:13px; padding:7px 13px; border-radius:8px; transition:background .15s,color .15s;}
+  .seg button[aria-pressed="true"]{background:var(--surface); color:var(--ink); box-shadow:var(--shadow);}
+  .seg.small button{padding:5px 10px; font-size:12px;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);}
+
+  /* hero daily card */
+  .hero{padding:22px 22px 20px; margin-bottom:16px; position:relative; overflow:hidden;}
+  .hero::before{content:""; position:absolute; inset:0 0 auto 0; height:4px; background:var(--accent-line);}
+  .hero.warn::before{background:var(--warn);}
+  .hero.crit::before{background:var(--crit);}
+  .hero .lbl{color:var(--ink-2); font-size:13px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;}
+  .hero .big{font-family:"Fraunces", Georgia, serif; font-weight:600; font-size:clamp(46px,14vw,68px); line-height:1; letter-spacing:-.02em; margin:6px 0 4px; font-variant-numeric:tabular-nums;}
+  .hero .big.warn{color:var(--warn)} .hero .big.crit{color:var(--crit)}
+  .hero .heroline{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:14px; color:var(--ink-2); font-size:14px;}
+  .hero .heroline b{color:var(--ink); font-weight:600;}
+  .chip{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; padding:4px 10px; border-radius:100px;}
+  .chip.good{background:var(--good-soft); color:var(--good);}
+  .chip.warn{background:var(--warn-soft); color:var(--warn);}
+  .chip.crit{background:var(--crit-soft); color:var(--crit);}
+  .basis{display:flex; align-items:center; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); flex-wrap:wrap;}
+  .basis .lbl{font-size:12.5px; color:var(--ink-3); font-weight:600;}
+
+  /* summary stats */
+  .stats{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px;}
+  @media(min-width:560px){ .stats{grid-template-columns:repeat(4,1fr);} }
+  .stat{padding:13px 14px;}
+  .stat .k{color:var(--ink-2); font-size:12px; font-weight:600; letter-spacing:.02em;}
+  .stat .v{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:19px; font-weight:500; margin-top:3px;}
+  .stat .v.good{color:var(--good)} .stat .v.crit{color:var(--crit)}
+
+  .savings{padding:12px 16px; margin-bottom:22px; display:flex; align-items:center; gap:10px; background:var(--good-soft); border-color:transparent;}
+  .savings .h{font-size:13px; color:var(--ink); font-weight:600;}
+  .savings .amt{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-weight:600; color:var(--good); font-size:17px;}
+  .savings .amt.crit{color:var(--crit);}
+
+  .section-h{display:flex; align-items:baseline; justify-content:space-between; margin:0 4px 10px;}
+  .section-h h2{font-family:"Fraunces",serif; font-weight:600; font-size:17px;}
+  .section-h .hint{font-size:12px; color:var(--ink-3);}
+
+  /* buckets */
+  .buckets{display:flex; flex-direction:column; gap:10px; margin-bottom:24px;}
+  .bucket{padding:14px 16px;}
+  .bucket .top{display:flex; align-items:baseline; gap:8px; margin-bottom:9px;}
+  .bucket .name{font-weight:600; font-size:15px; display:flex; align-items:center; gap:8px;}
+  .bucket .tag{font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); border:1px solid var(--border); border-radius:5px; padding:1px 6px;}
+  .bucket .vals{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:13.5px; color:var(--ink-2);}
+  .bucket .vals b{color:var(--ink); font-weight:600;}
+  .track{height:9px; border-radius:6px; background:var(--surface-2); border:1px solid var(--border); overflow:hidden;}
+  .fill{height:100%; border-radius:6px 0 0 6px; background:var(--accent); transition:width .35s ease;}
+  .fill.warn{background:var(--warn)} .fill.crit{background:var(--crit)}
+  .bucket .foot{display:flex; justify-content:space-between; margin-top:7px; font-size:12.5px; color:var(--ink-3);}
+  .bucket .foot .rem{font-weight:600;}
+  .bucket .foot .rem.good{color:var(--good)} .bucket .foot .rem.crit{color:var(--crit)}
+
+  /* add form */
+  .add{padding:16px; margin-bottom:24px;}
+  .add h2{font-family:"Fraunces",serif; font-weight:600; font-size:17px; margin-bottom:13px;}
+  .field{margin-bottom:11px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-2); margin-bottom:5px;}
+  input[type=number], input[type=date], input[type=text], select{
+    width:100%; font-family:inherit; font-size:15px; color:var(--ink);
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:11px 12px;
+  }
+  #amount{font-family:"IBM Plex Mono",monospace; font-size:22px; font-weight:500;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:11px;}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; width:100%; border:0; background:var(--accent); color:#fff; font-weight:700; font-size:15px; padding:13px; border-radius:11px; transition:filter .15s;}
+  .btn:hover{filter:brightness(1.06);}
+  .btn.ghost{background:transparent; color:var(--ink-2); border:1px solid var(--border); font-weight:600;}
+  .btn.sm{width:auto; padding:8px 14px; font-size:13px;}
+  .editing-note{display:none; font-size:12.5px; color:var(--warn); font-weight:600; margin-bottom:9px;}
+
+  /* expense list */
+  .exp-list{display:flex; flex-direction:column; gap:1px; background:var(--border); border-radius:var(--radius); overflow:hidden; border:1px solid var(--border);}
+  .exp{display:flex; align-items:center; gap:11px; padding:11px 14px; background:var(--surface);}
+  .exp .cat{font-weight:600; font-size:14px;}
+  .exp .meta{font-size:12px; color:var(--ink-3); display:flex; gap:7px; align-items:center; flex-wrap:wrap;}
+  .who{font-size:10.5px; font-weight:700; letter-spacing:.03em; padding:1px 7px; border-radius:100px;}
+  .who.tanguy{background:var(--accent-soft); color:var(--accent);}
+  .who.elena{background:var(--warn-soft); color:var(--warn);}
+  .who.both{background:var(--surface-2); color:var(--ink-2); border:1px solid var(--border);}
+  .exp .amt{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-weight:600; font-size:15px;}
+  .exp .del{border:0; background:transparent; color:var(--ink-3); font-size:19px; line-height:1; padding:2px 6px; border-radius:7px;}
+  .exp .del:hover{color:var(--crit); background:var(--crit-soft);}
+  .exp .edit{border:0; background:transparent; color:var(--ink-3); font-size:14px; padding:4px 6px; border-radius:7px;}
+  .exp .edit:hover{color:var(--accent); background:var(--accent-soft);}
+  .empty{padding:30px 20px; text-align:center; color:var(--ink-3); font-size:14px; background:var(--surface);}
+
+  /* settings */
+  details.settings{margin-top:26px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+  details.settings > summary{list-style:none; cursor:pointer; padding:15px 18px; font-weight:600; font-size:15px; display:flex; align-items:center; gap:9px;}
+  details.settings > summary::-webkit-details-marker{display:none;}
+  details.settings > summary::after{content:"▸"; margin-left:auto; color:var(--ink-3); transition:transform .2s;}
+  details.settings[open] > summary::after{transform:rotate(90deg);}
+  .settings-body{padding:4px 18px 20px; border-top:1px solid var(--border);}
+  .sub-h{font-family:"Fraunces",serif; font-weight:600; font-size:15px; margin:18px 0 4px;}
+  .sub-p{font-size:12.5px; color:var(--ink-3); margin:0 0 12px;}
+  .recur{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:14px;}
+  .recur:last-child{border-bottom:0;}
+  .recur .rn{font-weight:500;}
+  .recur .ra{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; color:var(--ink-2); font-size:13px;}
+  .toggle{border:1px solid var(--border); background:var(--surface-2); color:var(--ink-2); font-weight:600; font-size:12.5px; padding:6px 12px; border-radius:9px; min-width:78px;}
+  .toggle.on{background:var(--good-soft); color:var(--good); border-color:transparent;}
+  .bedit{display:grid; grid-template-columns:1fr 84px 84px 30px; gap:7px; align-items:center; margin-bottom:6px;}
+  .bedit .bh{font-size:11px; color:var(--ink-3); font-weight:700; text-transform:uppercase; letter-spacing:.03em;}
+  .bedit input{padding:7px 8px; font-size:13px;}
+  .bgroup{font-family:"Fraunces",serif; font-weight:600; font-size:14px; margin:14px 0 7px; color:var(--accent);}
+  .xcat{border:0; background:transparent; color:var(--ink-3); font-size:16px; border-radius:6px;}
+  .xcat:hover{color:var(--crit);}
+
+  .offline{background:var(--warn-soft); color:var(--warn); font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:10px; margin-bottom:16px; display:none;}
+
+  /* toast */
+  #toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--bg); font-size:13.5px; font-weight:600; padding:11px 18px; border-radius:100px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:50;}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+
+  /* lock screen */
+  #lock{position:fixed; inset:0; background:var(--bg); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px;}
+  #lock .box{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:30px 26px; max-width:340px; width:100%; text-align:center;}
+  #lock .mark{font-size:34px;}
+  #lock h2{font-family:"Fraunces",serif; font-weight:600; font-size:21px; margin:10px 0 4px;}
+  #lock p{color:var(--ink-2); font-size:13.5px; margin:0 0 18px;}
+  #lock input{text-align:center; font-family:"IBM Plex Mono",monospace; font-size:22px; letter-spacing:.3em;}
+  #lock .err{color:var(--crit); font-size:12.5px; font-weight:600; margin-top:10px; min-height:16px;}
+  #lock button{margin-top:14px;}
+  .conn{font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:10px; margin-bottom:16px; display:none;}
+  .conn.err{background:var(--crit-soft); color:var(--crit); display:block;}
+  .conn.ok{background:var(--good-soft); color:var(--good); display:block;}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="mark">💚</span>
+      <div>
+        <h1>Tanguy &amp; Elena</h1>
+        <div class="sub" id="monthLabel">Budget · Barcelona</div>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Whose budget">
+      <button data-view="household" aria-pressed="true">Household</button>
+      <button data-view="tanguy" aria-pressed="false">Tanguy</button>
+      <button data-view="elena" aria-pressed="false">Elena</button>
+    </div>
+  </header>
+
+  <div class="conn" id="conn"></div>
+
+  <!-- HERO -->
+  <div class="card hero" id="hero"></div>
+
+  <!-- SUMMARY -->
+  <div class="stats" id="stats"></div>
+  <div class="card savings" id="savings"></div>
+
+  <!-- ADD EXPENSE -->
+  <div class="card add">
+    <h2>Add an expense</h2>
+    <div class="editing-note" id="editingNote">Editing an expense — <button type="button" class="btn ghost sm" id="cancelEdit" style="width:auto;display:inline-flex;padding:3px 10px;margin-left:4px;">cancel</button></div>
+    <form id="expForm">
+      <div class="field">
+        <label for="amount">Amount (€)</label>
+        <input type="number" id="amount" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required>
+      </div>
+      <div class="field">
+        <label for="category">Category</label>
+        <select id="category" required></select>
+      </div>
+      <div class="field">
+        <label>Who paid?</label>
+        <div class="seg small" id="whoSeg" role="group" aria-label="Who paid">
+          <button type="button" data-who="both" aria-pressed="true">Both</button>
+          <button type="button" data-who="tanguy" aria-pressed="false">Tanguy</button>
+          <button type="button" data-who="elena" aria-pressed="false">Elena</button>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="date">Date</label><input type="date" id="date"></div>
+        <div class="field"><label for="note">Note (optional)</label><input type="text" id="note" placeholder="e.g. Mercadona"></div>
+      </div>
+      <button type="submit" class="btn" id="saveBtn">Add expense</button>
+    </form>
+  </div>
+
+  <!-- BUCKETS -->
+  <div class="section-h"><h2>Where the money goes</h2><span class="hint" id="bucketHint">this month</span></div>
+  <div class="buckets" id="buckets"></div>
+
+  <!-- EXPENSES -->
+  <div class="section-h"><h2>Recent expenses</h2><span class="hint" id="expHint"></span></div>
+  <div id="expWrap"></div>
+
+  <!-- SETTINGS -->
+  <details class="settings">
+    <summary>⚙︎ Setup &amp; monthly bills</summary>
+    <div class="settings-body">
+      <div class="sub-h">Fixed monthly bills — one tap to log</div>
+      <p class="sub-p">Rent, subscriptions and other fixed costs. Tap “Paid” when they go out so they count toward your budget. Amounts follow the split from your sheet.</p>
+      <div id="recurList"></div>
+
+      <div class="sub-h" style="margin-top:22px;">Edit budgets &amp; income</div>
+      <p class="sub-p">Change any monthly amount and press save. This updates the plan for both of you.</p>
+      <div id="incomeEdit"></div>
+      <div id="budgetEdit"></div>
+      <div style="display:flex; gap:9px; margin-top:14px; flex-wrap:wrap;">
+        <button class="btn sm" id="saveBudget">Save changes</button>
+        <button class="btn ghost sm" id="addCat">+ Add a category</button>
+      </div>
+    </div>
+  </details>
+
+  <p style="text-align:center; color:var(--ink-3); font-size:11.5px; margin-top:26px;">The “safe to spend today” figure = money left this month ÷ days left, recalculated every day. Bookmark this page — you and Tanguy share the same link and live data.</p>
+</div>
+
+<div id="toast"></div>
+
+<div id="lock">
+  <div class="box">
+    <div class="mark">💚</div>
+    <h2>Tanguy &amp; Elena</h2>
+    <p>Enter your shared passcode to open your budget.</p>
+    <form id="lockForm">
+      <input type="password" id="passInput" inputmode="numeric" autocomplete="off" aria-label="Passcode" required>
+      <div class="err" id="lockErr"></div>
+      <button type="submit" class="btn">Open</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ======================================================================
+   CONNECTION SETTINGS  —  the only three lines you may need to touch.
+   Replace the two Supabase values with the ones from your project, and
+   pick a passcode you and Tanguy will both type to open the app.
+====================================================================== */
+const SUPABASE_URL      = "https://mciiahtynmlrgdymicgn.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_sp2_IRp99vJAdAeexBuM1g_6Gg6_Wno";
+/* ==================================================================== */
+</script>
+<script>
+/* ---------- default budget (from your sheet; editable in Setup) ---------- */
+const DEFAULT_BUCKETS = [
+  {id:'housing',   name:'Housing & Transport', flexible:false},
+  {id:'subs',      name:'Subscriptions',       flexible:false},
+  {id:'daily',     name:'Daily life',          flexible:true},
+  {id:'fun',       name:'Fun',                 flexible:true},
+  {id:'emergency', name:'Emergency fund',      flexible:true},
+];
+const DEFAULT_CATS = [
+  {id:'rent',     name:'Rent',                       bucket:'housing', t:2000, e:500},
+  {id:'elec',     name:'Electricity',                bucket:'housing', t:0,    e:50},
+  {id:'water',    name:'Water',                      bucket:'housing', t:0,    e:20},
+  {id:'internet', name:'Internet',                   bucket:'housing', t:0,    e:30.95},
+  {id:'transport',name:'Transport',                  bucket:'housing', t:0,    e:0},
+  {id:'loan',     name:'Student loan (Tanguy)',      bucket:'housing', t:223,  e:0},
+  {id:'amex_t',   name:'Amex Platinum (Tanguy)',     bucket:'subs',    t:65,   e:0},
+  {id:'amex_e',   name:'Amex Platinum (Elena supp.)',bucket:'subs',    t:10,   e:0},
+  {id:'spotify',  name:'Spotify',                    bucket:'subs',    t:12,   e:0},
+  {id:'icloud',   name:'iCloud 2 TB',                bucket:'subs',    t:9.99, e:9.99},
+  {id:'phone',    name:'Phone',                      bucket:'subs',    t:50,   e:20},
+  {id:'claude',   name:'Claude',                     bucket:'subs',    t:20,   e:20},
+  {id:'canva',    name:'Canva',                      bucket:'subs',    t:0,    e:15},
+  {id:'prime',    name:'Amazon Prime',               bucket:'subs',    t:0,    e:3},
+  {id:'mutuelle', name:'Mutuelle (health)',          bucket:'subs',    t:0,    e:110},
+  {id:'groceries',name:'Supermarkets',               bucket:'daily',   t:0,    e:700},
+  {id:'gym',      name:'Gym / sport',                bucket:'daily',   t:0,    e:19},
+  {id:'resto',    name:'Restaurants & bars',         bucket:'fun',     t:600,  e:100},
+  {id:'clothes',  name:'Clothes shopping',           bucket:'fun',     t:300,  e:300},
+  {id:'outings',  name:'Outings / culture',          bucket:'fun',     t:150,  e:150},
+  {id:'other',    name:'Other',                      bucket:'fun',     t:450,  e:750},
+  {id:'ef',       name:'Emergency fund',             bucket:'emergency',t:0,   e:0},
+];
+const DEFAULT_INCOME = {t:6000, e:4000};
+
+/* ---------- state ---------- */
+const state = {
+  buckets: JSON.parse(JSON.stringify(DEFAULT_BUCKETS)),
+  cats:    JSON.parse(JSON.stringify(DEFAULT_CATS)),
+  income:  {...DEFAULT_INCOME},
+  expenses: [],
+  view: 'household',
+  who: 'both',
+  dailyBasis: 'flexible',      // 'all' or 'flexible'
+  editingId: null,
+};
+let sb = null;  // Supabase client, created after the passcode is entered
+
+/* ---------- helpers ---------- */
+const _eur0 = new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+const _eur2 = new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2});
+const eur  = n => _eur0.format(n||0);
+const eur2 = n => _eur2.format(n||0);
+const $ = s => document.querySelector(s);
+function pad(n){return String(n).padStart(2,'0');}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function monthKey(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1);}
+function monthOf(s){return (s||'').slice(0,7);}
+function daysInfo(){const d=new Date(),y=d.getFullYear(),m=d.getMonth();const total=new Date(y,m+1,0).getDate();const day=d.getDate();return {total,day,remaining:total-day+1};}
+function bucketOf(id){return state.buckets.find(b=>b.id===id) || {id:'other',name:'Other',flexible:true};}
+function catOf(id){return state.cats.find(c=>c.id===id);}
+function catName(id){const c=catOf(id);return c?c.name:'(deleted)';}
+function catFlexible(id){const c=catOf(id);return c?bucketOf(c.bucket).flexible:true;}
+function catBudget(c,view){return view==='tanguy'?c.t:view==='elena'?c.e:c.t+c.e;}
+function incomeFor(view){return view==='tanguy'?state.income.t:view==='elena'?state.income.e:state.income.t+state.income.e;}
+function attributed(exp,view){
+  if(view==='household') return exp.amount;
+  if(exp.who==='both') return exp.amount/2;
+  return exp.who===view ? exp.amount : 0;
+}
+function thisMonth(){return state.expenses.filter(e=>monthOf(e.date)===monthKey());}
+
+function budgetInScope(view,flexOnly){
+  return state.cats.reduce((s,c)=> s + ((!flexOnly||bucketOf(c.bucket).flexible)?catBudget(c,view):0), 0);
+}
+function spentInScope(view,flexOnly){
+  return thisMonth().reduce((s,e)=> s + ((!flexOnly||catFlexible(e.categoryId))?attributed(e,view):0), 0);
+}
+
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
+
+/* ---------- render: hero ---------- */
+function renderHero(){
+  const view=state.view, flexOnly=state.dailyBasis==='flexible';
+  const {remaining:daysLeft}=daysInfo();
+  const budget=budgetInScope(view,flexOnly);
+  const spent=spentInScope(view,flexOnly);
+  const left=budget-spent;
+  const daily=left>0?left/daysLeft:0;
+  const spentToday=thisMonth().filter(e=>e.date===todayStr()).reduce((s,e)=> s + ((!flexOnly||catFlexible(e.categoryId))?attributed(e,view):0),0);
+
+  let cls='', chip='';
+  if(left<0){cls='crit'; chip='<span class="chip crit">Over budget this month</span>';}
+  else if(spentToday>daily && daily>0){cls='warn'; chip='<span class="chip warn">Over today’s budget</span>';}
+  else {chip='<span class="chip good">On track</span>';}
+
+  const el=$('#hero');
+  el.className='card hero '+cls;
+  el.innerHTML=`
+    <div class="lbl">Safe to spend today</div>
+    <div class="big ${cls}">${eur(Math.max(0,daily))}</div>
+    ${chip}
+    <div class="heroline">
+      <span>Spent today <b class="num">${eur2(spentToday)}</b></span>
+      <span><b class="num">${eur(Math.max(0,left))}</b> left this month</span>
+      <span><b>${daysLeft}</b> day${daysLeft===1?'':'s'} to go</span>
+    </div>
+    <div class="basis">
+      <span class="lbl">Daily budget based on:</span>
+      <div class="seg small" id="basisSeg" role="group" aria-label="Daily budget basis">
+        <button type="button" data-basis="all" aria-pressed="${state.dailyBasis==='all'}">All spending</button>
+        <button type="button" data-basis="flexible" aria-pressed="${state.dailyBasis==='flexible'}">Flexible only</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- render: summary + savings ---------- */
+function renderStats(){
+  const view=state.view;
+  const budget=budgetInScope(view,false);
+  const spent=spentInScope(view,false);
+  const left=budget-spent;
+  const {remaining:daysLeft}=daysInfo();
+  $('#stats').innerHTML=`
+    ${stat('Budget (month)',eur(budget))}
+    ${stat('Spent',eur(spent))}
+    ${stat('Left in budget',eur(left),left<0?'crit':'')}
+    ${stat('Days left',daysLeft)}`;
+  const income=incomeFor(view);
+  const saved=income-spent;
+  $('#savings').innerHTML=`
+    <span class="h">💚 Saved so far this month <span style="color:var(--ink-3);font-weight:400;">(income ${eur(income)} − spent)</span></span>
+    <span class="amt ${saved<0?'crit':''}">${eur(saved)}</span>`;
+}
+function stat(k,v,cls){return `<div class="card stat"><div class="k">${k}</div><div class="v ${cls||''}">${v}</div></div>`;}
+
+/* ---------- render: buckets ---------- */
+function renderBuckets(){
+  const view=state.view;
+  const rows=state.buckets.map(b=>{
+    const budget=state.cats.filter(c=>c.bucket===b.id).reduce((s,c)=>s+catBudget(c,view),0);
+    const spent=thisMonth().filter(e=>catOf(e.categoryId)&&catOf(e.categoryId).bucket===b.id).reduce((s,e)=>s+attributed(e,view),0);
+    if(budget===0 && spent===0) return '';
+    const pct=budget>0?Math.min(100,spent/budget*100):(spent>0?100:0);
+    const over=budget>0&&spent>budget;
+    const near=budget>0&&spent/budget>=0.8&&!over;
+    const fillCls=over?'crit':near?'warn':'';
+    const rem=budget-spent;
+    const remCls=rem<0?'crit':'good';
+    return `<div class="card bucket">
+      <div class="top">
+        <span class="name">${b.name}${b.flexible?'':' <span class="tag">fixed</span>'}</span>
+        <span class="vals"><b>${eur(spent)}</b> / ${eur(budget)}</span>
+      </div>
+      <div class="track"><div class="fill ${fillCls}" style="width:${pct}%"></div></div>
+      <div class="foot">
+        <span>${Math.round(pct)}% used</span>
+        <span class="rem ${remCls}">${rem<0?eur(-rem)+' over':eur(rem)+' left'}</span>
+      </div>
+    </div>`;
+  }).join('');
+  $('#buckets').innerHTML=rows||'<div class="empty card">No budgets set for this view.</div>';
+}
+
+/* ---------- render: expenses ---------- */
+function renderExpenses(){
+  const list=thisMonth().slice().sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).slice(0,40);
+  $('#expHint').textContent=thisMonth().length?thisMonth().length+' this month':'';
+  if(!list.length){$('#expWrap').innerHTML='<div class="empty card">No expenses yet this month. Add your first one above 👆</div>';return;}
+  const whoLabel={tanguy:'Tanguy',elena:'Elena',both:'Both'};
+  $('#expWrap').innerHTML='<div class="exp-list">'+list.map(e=>{
+    const d=e.date?new Date(e.date+'T00:00:00'):null;
+    const ds=d?d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+    return `<div class="exp">
+      <div>
+        <div class="cat">${catName(e.categoryId)}</div>
+        <div class="meta"><span class="who ${e.who}">${whoLabel[e.who]||e.who}</span><span>${ds}</span>${e.note?'<span>· '+escapeHtml(e.note)+'</span>':''}${e.recurring?'<span>· bill</span>':''}</div>
+      </div>
+      <span class="amt num">${eur2(e.amount)}</span>
+      <button class="edit" data-edit="${e.id}" aria-label="Edit">✎</button>
+      <button class="del" data-del="${e.id}" aria-label="Delete">×</button>
+    </div>`;
+  }).join('')+'</div>';
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------- render: category select ---------- */
+function renderCatSelect(){
+  const sel=$('#category'); const prev=sel.value;
+  sel.innerHTML=state.buckets.map(b=>{
+    const opts=state.cats.filter(c=>c.bucket===b.id).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    return opts?`<optgroup label="${b.name}">${opts}</optgroup>`:'';
+  }).join('');
+  if(prev && catOf(prev)) sel.value=prev;
+}
+
+/* ---------- render: recurring bills ---------- */
+function renderRecurring(){
+  const fixedCats=state.cats.filter(c=>!bucketOf(c.bucket).flexible && (c.t+c.e)>0);
+  const paidIds=new Set(thisMonth().filter(e=>e.recurring).map(e=>e.categoryId));
+  $('#recurList').innerHTML=fixedCats.map(c=>{
+    const on=paidIds.has(c.id);
+    return `<div class="recur">
+      <span class="rn">${c.name}</span>
+      <span class="ra">${eur2(c.t+c.e)}</span>
+      <button class="toggle ${on?'on':''}" data-recur="${c.id}">${on?'✓ Paid':'Mark paid'}</button>
+    </div>`;
+  }).join('') || '<p class="sub-p">No fixed bills.</p>';
+}
+
+/* ---------- render: budget editor ---------- */
+function renderBudgetEditor(){
+  $('#incomeEdit').innerHTML=`
+    <div class="bgroup">Monthly income</div>
+    <div class="bedit"><span></span><span class="bh">Tanguy €</span><span class="bh">Elena €</span><span></span></div>
+    <div class="bedit">
+      <span style="font-size:13px;">Salary</span>
+      <input type="number" step="1" min="0" data-inc="t" value="${state.income.t}">
+      <input type="number" step="1" min="0" data-inc="e" value="${state.income.e}">
+      <span></span>
+    </div>`;
+  let html='';
+  state.buckets.forEach(b=>{
+    const cats=state.cats.filter(c=>c.bucket===b.id);
+    if(!cats.length) return;
+    html+=`<div class="bgroup">${b.name}</div>
+      <div class="bedit"><span></span><span class="bh">Tanguy €</span><span class="bh">Elena €</span><span></span></div>`;
+    cats.forEach(c=>{
+      html+=`<div class="bedit">
+        <input type="text" data-cn="${c.id}" value="${escapeHtml(c.name)}" aria-label="Category name">
+        <input type="number" step="0.01" min="0" data-ct="${c.id}" value="${c.t}" aria-label="Tanguy amount">
+        <input type="number" step="0.01" min="0" data-ce="${c.id}" value="${c.e}" aria-label="Elena amount">
+        <button class="xcat" data-xcat="${c.id}" aria-label="Remove">×</button>
+      </div>`;
+    });
+  });
+  $('#budgetEdit').innerHTML=html;
+}
+
+/* ---------- master render ---------- */
+function renderDashboard(){
+  const d=new Date();
+  $('#monthLabel').textContent=d.toLocaleDateString('en-GB',{month:'long',year:'numeric'})+' · Barcelona';
+  renderHero(); renderStats(); renderBuckets(); renderExpenses(); renderRecurring();
+}
+
+/* ---------- data writes (Supabase) ---------- */
+function expenseRow(obj){
+  return {amount:obj.amount, category_id:obj.categoryId, who:obj.who, date:obj.date, note:obj.note||'', recurring:!!obj.recurring};
+}
+async function addExpense(obj){
+  if(!sb){ toast('Not connected'); return; }
+  try{ const {error}=await sb.from('expenses').insert(expenseRow(obj)); if(error) throw error; toast('Saved'); loadExpenses(); }
+  catch(err){ toast('Could not save'); console.error(err); }
+}
+async function updateExpense(id,obj){
+  if(!sb){ toast('Not connected'); return; }
+  try{ const {error}=await sb.from('expenses').update(expenseRow(obj)).eq('id',id); if(error) throw error; toast('Updated'); loadExpenses(); }
+  catch(err){ toast('Could not update'); console.error(err); }
+}
+async function deleteExpense(id){
+  if(!sb) return;
+  try{ const {error}=await sb.from('expenses').delete().eq('id',id); if(error) throw error; loadExpenses(); }
+  catch(err){ toast('Could not delete'); console.error(err); }
+}
+async function saveBudgetConfig(){
+  if(!sb){ toast('Not connected'); return; }
+  try{ const {error}=await sb.from('config').upsert({id:'budget', data:{buckets:state.buckets, cats:state.cats, income:state.income}}); if(error) throw error; toast('Budget saved'); }
+  catch(err){ toast('Could not save'); console.error(err); }
+}
+async function setBasis(v){
+  state.dailyBasis=v; renderHero();
+  if(!sb) return;
+  try{ await sb.from('config').upsert({id:'settings', data:{dailyBasis:v}}); }catch(err){}
+}
+async function toggleRecurring(catId){
+  const c=catOf(catId); if(!c) return;
+  const existing=thisMonth().filter(e=>e.recurring && e.categoryId===catId);
+  if(existing.length){ for(const e of existing) await deleteExpense(e.id); }
+  else{
+    const date=todayStr();
+    if(c.t>0) await addExpense({amount:c.t, categoryId:catId, who:'tanguy', date, note:'Monthly bill', recurring:true});
+    if(c.e>0) await addExpense({amount:c.e, categoryId:catId, who:'elena',  date, note:'Monthly bill', recurring:true});
+  }
+}
+
+/* ---------- form handling ---------- */
+function resetForm(){
+  state.editingId=null;
+  $('#expForm').reset();
+  $('#date').value=todayStr();
+  setWho('both');
+  $('#saveBtn').textContent='Add expense';
+  $('#editingNote').style.display='none';
+}
+function setWho(w){
+  state.who=w;
+  document.querySelectorAll('#whoSeg button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.who===w));
+}
+function loadForEdit(id){
+  const e=state.expenses.find(x=>x.id===id); if(!e) return;
+  state.editingId=id;
+  $('#amount').value=e.amount;
+  renderCatSelect(); $('#category').value=e.categoryId;
+  setWho(e.who);
+  $('#date').value=e.date||todayStr();
+  $('#note').value=e.note||'';
+  $('#saveBtn').textContent='Update expense';
+  $('#editingNote').style.display='block';
+  $('#amount').focus();
+  document.querySelector('.add').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ---------- wiring ---------- */
+function wire(){
+  $('#date').value=todayStr();
+  renderCatSelect();
+
+  // view toggle
+  document.querySelectorAll('header .seg button').forEach(b=>b.addEventListener('click',()=>{
+    state.view=b.dataset.view;
+    document.querySelectorAll('header .seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    renderDashboard();
+  }));
+
+  // who toggle
+  document.querySelectorAll('#whoSeg button').forEach(b=>b.addEventListener('click',()=>setWho(b.dataset.who)));
+
+  // basis toggle (delegated, hero re-renders)
+  document.addEventListener('click',ev=>{
+    const bb=ev.target.closest('[data-basis]'); if(bb){ setBasis(bb.dataset.basis); }
+    const del=ev.target.closest('[data-del]'); if(del){ deleteExpense(del.dataset.del); }
+    const ed=ev.target.closest('[data-edit]'); if(ed){ loadForEdit(ed.dataset.edit); }
+    const rc=ev.target.closest('[data-recur]'); if(rc){ toggleRecurring(rc.dataset.recur); }
+    const xc=ev.target.closest('[data-xcat]'); if(xc){ state.cats=state.cats.filter(c=>c.id!==xc.dataset.xcat); renderBudgetEditor(); }
+  });
+
+  // submit
+  $('#expForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const amount=parseFloat($('#amount').value);
+    if(!(amount>0)){toast('Enter an amount');return;}
+    const obj={amount, categoryId:$('#category').value, who:state.who, date:$('#date').value||todayStr(), note:$('#note').value.trim(), recurring:false};
+    if(state.editingId){ obj.createdAt=(state.expenses.find(x=>x.id===state.editingId)||{}).createdAt||Date.now(); updateExpense(state.editingId,obj); }
+    else { addExpense(obj); }
+    resetForm();
+  });
+  $('#cancelEdit').addEventListener('click',resetForm);
+
+  // budget editor
+  $('#saveBudget').addEventListener('click',()=>{
+    document.querySelectorAll('[data-cn]').forEach(i=>{const c=catOf(i.dataset.cn);if(c)c.name=i.value.trim()||c.name;});
+    document.querySelectorAll('[data-ct]').forEach(i=>{const c=catOf(i.dataset.ct);if(c)c.t=parseFloat(i.value)||0;});
+    document.querySelectorAll('[data-ce]').forEach(i=>{const c=catOf(i.dataset.ce);if(c)c.e=parseFloat(i.value)||0;});
+    document.querySelectorAll('[data-inc]').forEach(i=>{state.income[i.dataset.inc]=parseFloat(i.value)||0;});
+    saveBudgetConfig(); renderCatSelect(); renderBudgetEditor();
+  });
+  $('#addCat').addEventListener('click',()=>{
+    const id='c'+Date.now().toString(36);
+    state.cats.push({id, name:'New category', bucket:'fun', t:0, e:0});
+    renderBudgetEditor();
+  });
+
+  renderBudgetEditor();
+  renderDashboard();
+}
+
+/* ---------- Supabase connection ---------- */
+function mapRow(r){ return {id:r.id, amount:Number(r.amount), categoryId:r.category_id, who:r.who, date:r.date, note:r.note, recurring:!!r.recurring, createdAt:r.created_at}; }
+
+async function loadExpenses(){
+  if(!sb) return;
+  const {data,error}=await sb.from('expenses').select('*').order('created_at',{ascending:false}).limit(2000);
+  if(error){ console.error(error); return; }
+  state.expenses=(data||[]).map(mapRow);
+  renderDashboard();
+}
+async function loadConfig(){
+  if(!sb) return;
+  const {data,error}=await sb.from('config').select('*');
+  if(error){ console.error(error); return; }
+  (data||[]).forEach(r=>{
+    if(r.id==='budget' && r.data){
+      if(Array.isArray(r.data.buckets)&&r.data.buckets.length) state.buckets=r.data.buckets;
+      if(Array.isArray(r.data.cats)&&r.data.cats.length) state.cats=r.data.cats;
+      if(r.data.income) state.income=r.data.income;
+    }
+    if(r.id==='settings' && r.data && r.data.dailyBasis) state.dailyBasis=r.data.dailyBasis;
+  });
+  renderCatSelect(); renderBudgetEditor(); renderDashboard();
+}
+
+/* ---------- start the live app (after passcode) ---------- */
+let started=false;
+function startApp(){
+  if(started) return; started=true;
+  document.getElementById('lock').style.display='none';
+  wire();
+  loadConfig();
+  loadExpenses();
+  sb.channel('rt-expenses').on('postgres_changes',{event:'*',schema:'public',table:'expenses'},()=>loadExpenses()).subscribe();
+  sb.channel('rt-config').on('postgres_changes',{event:'*',schema:'public',table:'config'},()=>loadConfig()).subscribe();
+  const conn=$('#conn'); conn.className='conn ok'; conn.textContent='● Live — synced across your devices';
+  setTimeout(()=>{ conn.style.display='none'; }, 3200);
+}
+
+/* ---------- passcode: set on first open, then shared by both ---------- */
+async function fetchPasscode(){
+  const {data,error}=await sb.from('config').select('data').eq('id','passcode').maybeSingle();
+  if(error) throw error;
+  return data && data.data ? data.data.value : null;
+}
+async function savePasscode(v){
+  const {error}=await sb.from('config').upsert({id:'passcode', data:{value:v}});
+  if(error) throw error;
+}
+
+async function boot(){
+  const lockErr=document.getElementById('lockErr');
+  const lockP=document.querySelector('#lock p');
+  const input=document.getElementById('passInput');
+  const btn=document.querySelector('#lockForm button');
+
+  if(!window.supabase){ lockErr.textContent='Could not load. Please reload the page.'; return; }
+  try{ sb=window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+  catch(e){ lockErr.textContent='Could not start. Please reload the page.'; return; }
+
+  // this device already unlocked before?
+  let already=false; try{ already=localStorage.getItem('te_unlocked')==='1'; }catch(e){}
+  if(already){ startApp(); return; }
+
+  // has a passcode been set yet?
+  let existing;
+  try{ existing=await fetchPasscode(); }
+  catch(err){ console.error(err); lockErr.textContent='Could not reach the database — check your internet and reload.'; return; }
+
+  const mode = existing ? 'enter' : 'create';
+  if(mode==='create'){ lockP.textContent='Choose a passcode you and Tanguy will both use to open this budget.'; btn.textContent='Set passcode & open'; }
+  else { lockP.textContent='Enter your shared passcode to open your budget.'; btn.textContent='Open'; }
+  input.focus();
+
+  document.getElementById('lockForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const val=input.value.trim();
+    if(mode==='create'){
+      if(val.length<4){ lockErr.textContent='Use at least 4 characters.'; return; }
+      lockErr.textContent='Saving…';
+      try{ await savePasscode(val); }catch(err){ lockErr.textContent='Could not save — check connection.'; return; }
+      try{ localStorage.setItem('te_unlocked','1'); }catch(e){}
+      startApp();
+    } else {
+      if(val===existing){ try{ localStorage.setItem('te_unlocked','1'); }catch(e){} startApp(); }
+      else { lockErr.textContent='Wrong passcode — try again.'; input.value=''; }
+    }
+  });
+}
+boot();
+</script>
