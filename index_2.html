@@ -172,6 +172,8 @@
   .bgroup{font-family:"Fraunces",serif; font-weight:600; font-size:14px; margin:14px 0 7px; color:var(--accent);}
   .xcat{border:0; background:transparent; color:var(--ink-3); font-size:16px; border-radius:6px;}
   .xcat:hover{color:var(--crit);}
+  .addline{display:inline-block; margin:2px 0 6px; border:1px dashed var(--border); background:transparent; color:var(--accent); font-weight:600; font-size:12.5px; padding:6px 11px; border-radius:9px;}
+  .addline:hover{background:var(--accent-soft);}
 
   .offline{background:var(--warn-soft); color:var(--warn); font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:10px; margin-bottom:16px; display:none;}
 
@@ -317,13 +319,12 @@
       <p class="sub-p">Rent, subscriptions and other fixed costs. Tap “Paid” when they go out so they count toward your budget. Amounts follow the split from your sheet.</p>
       <div id="recurList"></div>
 
-      <div class="sub-h" style="margin-top:22px;">Edit budgets &amp; income</div>
-      <p class="sub-p">Change any monthly amount and press save. This updates the plan for both of you.</p>
+      <div class="sub-h" style="margin-top:22px;">Edit budgets, income &amp; investments</div>
+      <p class="sub-p">Change any amount, add lines under any section, then press Save. Updates the plan for both of you. <b>Nothing is saved until you press Save.</b></p>
       <div id="incomeEdit"></div>
       <div id="budgetEdit"></div>
-      <div style="display:flex; gap:9px; margin-top:14px; flex-wrap:wrap;">
-        <button class="btn sm" id="saveBudget">Save changes</button>
-        <button class="btn ghost sm" id="addCat">+ Add a category</button>
+      <div style="margin-top:16px;">
+        <button class="btn" id="saveBudget">Save all changes</button>
       </div>
     </div>
   </details>
@@ -404,6 +405,8 @@ const state = {
   dailyBasis: 'flexible',      // 'all' or 'flexible'
   editingId: null,
   viewMonth: '',               // which month the dashboard is showing (YYYY-MM)
+  invLines: [],                // optional investment plan lines
+  editorOpen: false,           // is the Setup editor open (protects edits from sync)
 };
 let sb = null;  // Supabase client, created after the passcode is entered
 
@@ -451,7 +454,23 @@ function renderHero(){
   const view=state.view, flexOnly=state.dailyBasis==='flexible';
   const el=$('#hero');
 
-  // Past/other month → show a recap instead of the live daily figure
+  // Future month → planning preview
+  if(curMonth()>monthKey()){
+    const budgetAll=budgetInScope(view,false);
+    const logged=spentInScope(view,false);
+    el.className='card hero';
+    el.innerHTML=`
+      <div class="lbl">${monthName(curMonth())} — planned ahead</div>
+      <div class="big">${eur(budgetAll)}</div>
+      <span class="chip good">Planned spending</span>
+      <div class="heroline">
+        <span>Income <b class="num">${eur(incomeFor(view))}</b></span>
+        <span>To invest <b class="num">${eur(invPlan(view))}</b></span>
+        <span><b class="num">${eur(logged)}</b> logged so far</span>
+      </div>`;
+    return;
+  }
+  // Past month → recap instead of the live daily figure
   if(!isCurrentMonth()){
     const budgetAll=budgetInScope(view,false), spentAll=spentInScope(view,false);
     const leftAll=budgetAll-spentAll;
@@ -610,8 +629,7 @@ function renderBudgetEditor(){
   let html='';
   state.buckets.forEach(b=>{
     const cats=state.cats.filter(c=>c.bucket===b.id);
-    if(!cats.length) return;
-    html+=`<div class="bgroup">${b.name}</div>
+    html+=`<div class="bgroup">${b.name}${b.flexible?'':' <span style="font-size:10px;color:var(--ink-3)">fixed</span>'}</div>
       <div class="bedit"><span></span><span class="bh">Tanguy €</span><span class="bh">Elena €</span><span></span></div>`;
     cats.forEach(c=>{
       html+=`<div class="bedit">
@@ -621,18 +639,45 @@ function renderBudgetEditor(){
         <button class="xcat" data-xcat="${c.id}" aria-label="Remove">×</button>
       </div>`;
     });
+    html+=`<button type="button" class="addline" data-addline="${b.id}">+ add a line to ${b.name}</button>`;
   });
+  // Investments plan
+  const hasLines = state.invLines && state.invLines.length;
+  html+=`<div class="bgroup" style="color:var(--gold)">📈 Investments plan</div>
+    <p class="sub-p" style="margin:-2px 0 9px">${hasLines?'Your monthly investment targets (per person).':'Right now this is automatic: income − all expenses. Add lines below to set your own targets instead.'}</p>
+    <div class="bedit"><span></span><span class="bh">Tanguy €</span><span class="bh">Elena €</span><span></span></div>`;
+  (state.invLines||[]).forEach(l=>{
+    html+=`<div class="bedit">
+      <input type="text" data-in="${l.id}" value="${escapeHtml(l.name||'')}" aria-label="Investment name">
+      <input type="number" step="0.01" min="0" data-it="${l.id}" value="${l.t||0}" aria-label="Tanguy amount">
+      <input type="number" step="0.01" min="0" data-ie="${l.id}" value="${l.e||0}" aria-label="Elena amount">
+      <button class="xcat" data-xinv="${l.id}" aria-label="Remove">×</button>
+    </div>`;
+  });
+  html+=`<button type="button" class="addline" data-inv-addline="1">+ add an investment line (e.g. Brokerage, Crypto)</button>`;
   $('#budgetEdit').innerHTML=html;
+}
+
+/* read whatever is currently typed in the editor into state (so nothing is lost) */
+function readEditorInputs(){
+  document.querySelectorAll('[data-cn]').forEach(i=>{const c=catOf(i.dataset.cn);if(c)c.name=i.value.trim()||c.name;});
+  document.querySelectorAll('[data-ct]').forEach(i=>{const c=catOf(i.dataset.ct);if(c)c.t=parseFloat(i.value)||0;});
+  document.querySelectorAll('[data-ce]').forEach(i=>{const c=catOf(i.dataset.ce);if(c)c.e=parseFloat(i.value)||0;});
+  document.querySelectorAll('[data-inc]').forEach(i=>{state.income[i.dataset.inc]=parseFloat(i.value)||0;});
+  state.invLines=state.invLines||[];
+  document.querySelectorAll('[data-in]').forEach(i=>{const l=state.invLines.find(x=>x.id===i.dataset.in);if(l)l.name=i.value.trim()||l.name;});
+  document.querySelectorAll('[data-it]').forEach(i=>{const l=state.invLines.find(x=>x.id===i.dataset.it);if(l)l.t=parseFloat(i.value)||0;});
+  document.querySelectorAll('[data-ie]').forEach(i=>{const l=state.invLines.find(x=>x.id===i.dataset.ie);if(l)l.e=parseFloat(i.value)||0;});
 }
 
 /* ---------- render: month navigator ---------- */
 function renderMonthNav(){
   const cur=curMonth();
-  const atCurrent = cur===monthKey();
+  const tag = cur===monthKey() ? '' : (cur>monthKey() ? ' <span class="mnav-tag">upcoming</span>' : ' <span class="mnav-tag">past</span>');
   $('#monthNav').innerHTML=`
     <button class="mnav-btn" data-month-shift="-1" aria-label="Previous month">‹</button>
-    <div class="mnav-label">${monthName(cur)}${atCurrent?'':' <span class="mnav-tag">past</span>'}</div>
-    <button class="mnav-btn" data-month-shift="1" ${atCurrent?'disabled':''} aria-label="Next month">›</button>`;
+    <div class="mnav-label">${monthName(cur)}${tag}</div>
+    <button class="mnav-btn" data-month-shift="1" aria-label="Next month">›</button>`;
 }
 
 /* ---------- render: monthly history ---------- */
@@ -658,9 +703,15 @@ function renderHistory(){
 }
 
 /* ---------- render: investments ---------- */
+function invPlan(view){
+  if(state.invLines && state.invLines.length){
+    return state.invLines.reduce((s,l)=> s + (view==='tanguy'?(+l.t||0):view==='elena'?(+l.e||0):((+l.t||0)+(+l.e||0))), 0);
+  }
+  return Math.max(0, incomeFor(view)-budgetInScope(view,false));
+}
 function renderInvestments(){
   const view=state.view;
-  const planned=Math.max(0, incomeFor(view)-budgetInScope(view,false));
+  const planned=invPlan(view);
   const contribs=state.investments.filter(c=>monthOf(c.date)===curMonth());
   const invested=contribs.reduce((s,c)=>s+attributed(c,view),0);
   const pct=planned>0?Math.min(100,invested/planned*100):(invested>0?100:0);
@@ -719,7 +770,7 @@ async function deleteExpense(id){
 }
 async function saveBudgetConfig(){
   if(!sb){ toast('Not connected'); return; }
-  try{ const {error}=await sb.from('config').upsert({id:'budget', data:{buckets:state.buckets, cats:state.cats, income:state.income}}); if(error) throw error; toast('Budget saved'); }
+  try{ const {error}=await sb.from('config').upsert({id:'budget', data:{buckets:state.buckets, cats:state.cats, income:state.income, invLines:state.invLines}}); if(error) throw error; toast('✓ Saved'); }
   catch(err){ toast('Could not save'); console.error(err); }
 }
 async function setBasis(v){
@@ -797,8 +848,11 @@ function wire(){
     const del=ev.target.closest('[data-del]'); if(del){ deleteExpense(del.dataset.del); }
     const ed=ev.target.closest('[data-edit]'); if(ed){ loadForEdit(ed.dataset.edit); }
     const rc=ev.target.closest('[data-recur]'); if(rc){ toggleRecurring(rc.dataset.recur); }
-    const xc=ev.target.closest('[data-xcat]'); if(xc){ state.cats=state.cats.filter(c=>c.id!==xc.dataset.xcat); renderBudgetEditor(); }
-    const ms=ev.target.closest('[data-month-shift]'); if(ms){ const nm=shiftMonth(curMonth(), Number(ms.dataset.monthShift)); if(nm<=monthKey()){ state.viewMonth=nm; renderDashboard(); } }
+    const xc=ev.target.closest('[data-xcat]'); if(xc){ readEditorInputs(); state.cats=state.cats.filter(c=>c.id!==xc.dataset.xcat); renderBudgetEditor(); }
+    const al=ev.target.closest('[data-addline]'); if(al){ readEditorInputs(); state.cats.push({id:'c'+Date.now().toString(36), name:'New line', bucket:al.dataset.addline, t:0, e:0}); renderBudgetEditor(); }
+    const ial=ev.target.closest('[data-inv-addline]'); if(ial){ readEditorInputs(); state.invLines=state.invLines||[]; state.invLines.push({id:'i'+Date.now().toString(36), name:'New investment', t:0, e:0}); renderBudgetEditor(); }
+    const xi=ev.target.closest('[data-xinv]'); if(xi){ readEditorInputs(); state.invLines=(state.invLines||[]).filter(l=>l.id!==xi.dataset.xinv); renderBudgetEditor(); }
+    const ms=ev.target.closest('[data-month-shift]'); if(ms){ state.viewMonth=shiftMonth(curMonth(), Number(ms.dataset.monthShift)); renderDashboard(); }
     const mg=ev.target.closest('[data-month-go]'); if(mg){ state.viewMonth=mg.dataset.monthGo; renderDashboard(); window.scrollTo({top:0,behavior:'smooth'}); }
     const idl=ev.target.closest('[data-inv-del]'); if(idl){ deleteContribution(idl.dataset.invDel); }
   });
@@ -827,17 +881,12 @@ function wire(){
 
   // budget editor
   $('#saveBudget').addEventListener('click',()=>{
-    document.querySelectorAll('[data-cn]').forEach(i=>{const c=catOf(i.dataset.cn);if(c)c.name=i.value.trim()||c.name;});
-    document.querySelectorAll('[data-ct]').forEach(i=>{const c=catOf(i.dataset.ct);if(c)c.t=parseFloat(i.value)||0;});
-    document.querySelectorAll('[data-ce]').forEach(i=>{const c=catOf(i.dataset.ce);if(c)c.e=parseFloat(i.value)||0;});
-    document.querySelectorAll('[data-inc]').forEach(i=>{state.income[i.dataset.inc]=parseFloat(i.value)||0;});
-    saveBudgetConfig(); renderCatSelect(); renderBudgetEditor();
+    readEditorInputs();
+    saveBudgetConfig(); renderCatSelect(); renderBudgetEditor(); renderDashboard();
   });
-  $('#addCat').addEventListener('click',()=>{
-    const id='c'+Date.now().toString(36);
-    state.cats.push({id, name:'New category', bucket:'fun', t:0, e:0});
-    renderBudgetEditor();
-  });
+  // protect the editor from background sync while it's open
+  const settings=document.querySelector('details.settings');
+  if(settings) settings.addEventListener('toggle',()=>{ state.editorOpen=settings.open; if(settings.open) renderBudgetEditor(); });
 
   renderBudgetEditor();
   renderDashboard();
@@ -865,14 +914,17 @@ async function loadConfig(){
   const {data,error}=await sb.from('config').select('*');
   if(error){ console.error(error); return; }
   (data||[]).forEach(r=>{
-    if(r.id==='budget' && r.data){
+    // Don't overwrite budgets/categories while the Setup editor is open —
+    // that was silently wiping edits before they could be saved.
+    if(r.id==='budget' && r.data && !state.editorOpen){
       if(Array.isArray(r.data.buckets)&&r.data.buckets.length) state.buckets=r.data.buckets;
       if(Array.isArray(r.data.cats)&&r.data.cats.length) state.cats=r.data.cats;
       if(r.data.income) state.income=r.data.income;
+      state.invLines = Array.isArray(r.data.invLines) ? r.data.invLines : [];
     }
     if(r.id==='settings' && r.data && r.data.dailyBasis) state.dailyBasis=r.data.dailyBasis;
   });
-  renderCatSelect(); renderBudgetEditor(); renderDashboard();
+  renderCatSelect(); renderDashboard();
 }
 
 /* ---------- start the live app (after passcode) ---------- */
